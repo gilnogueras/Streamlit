@@ -19,7 +19,9 @@ def extraer_preguntas(pdf_path):
         highlights = []
         for annot in page.annots():
             if annot.type[0] == 8:  # Tipo 8 = Resaltado
-                highlights.append(annot.info["content"])  # Extraer texto resaltado
+                rect = annot.rect  # Obtener la posición del resaltado
+                text_highlighted = page.get_text("text", clip=rect)  # Extraer texto resaltado
+                highlights.append(text_highlighted.strip())
 
         for line in page.get_text("text").split("\n"):
             line = line.strip()
@@ -31,7 +33,7 @@ def extraer_preguntas(pdf_path):
                 respuesta_correcta = None
             elif line.startswith(("A)", "B)", "C)", "D)")):  # Si es una opción de respuesta
                 opciones.append(line)
-                if any(line in h for h in highlights):  # Si la opción está resaltada
+                if line in highlights:  # Si la opción está en los resaltados
                     respuesta_correcta = line
 
     if pregunta_actual:
