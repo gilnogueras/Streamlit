@@ -20,13 +20,16 @@ uploaded_file = st.file_uploader("Sube un archivo PDF con preguntas de test", ty
 if uploaded_file is not None:
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
         temp_file.write(uploaded_file.read())
-        temp_pdf_path = temp_file.name
-    
+        temp_pdf_path = temp_file.name  # Definir correctamente la variable aquí antes de usarla
+
     st.success("Archivo subido con éxito. Procesando...")
-    preguntas_extraidas = extraer_preguntas(temp_pdf_path)
-    st.write("Preguntas extraídas:")
-    for p in preguntas_extraidas[:10]:  # Mostrar solo algunas preguntas
-        st.write(p)
+    
+    # Asegurar que la variable existe antes de usarla
+    if 'temp_pdf_path' in locals():
+        preguntas_extraidas = extraer_preguntas(temp_pdf_path)
+        st.write(f"Se han extraído {len(preguntas_extraidas)} líneas de texto.")
+    else:
+        st.error("Error al procesar el archivo. Intenta subirlo nuevamente.")
 
 # Preguntas de ejemplo (esto se reemplazará con las extraídas del PDF)
 questions_data = [
