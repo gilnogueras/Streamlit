@@ -44,13 +44,13 @@ questions_data = [
 
 score = 0
 
-def mostrar_pregunta(pregunta, opciones, respuesta_correcta):
-    respuesta = st.radio(pregunta, opciones)
-    if st.button("Verificar"):
+def mostrar_pregunta(pregunta, opciones, respuesta_correcta, index):
+    respuesta = st.radio(pregunta, opciones, key=f"radio_{index}")
+    if st.button("Verificar", key=f"btn_{index}"):
         if respuesta == respuesta_correcta:
             st.success("¡Correcto!")
         else:
             st.error(f"Incorrecto. La respuesta correcta es: {respuesta_correcta}")
 
-for q in questions_data:
-    mostrar_pregunta(q["pregunta"], q["opciones"], q["respuesta_correcta"])
+for i, q in enumerate(questions_data):
+    mostrar_pregunta(q["pregunta"], q["opciones"], q["respuesta_correcta"], i)
