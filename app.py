@@ -28,6 +28,8 @@ if uploaded_file is not None:
     if 'temp_pdf_path' in locals():
         preguntas_extraidas = extraer_preguntas(temp_pdf_path)
         st.write(f"Se han extraído {len(preguntas_extraidas)} líneas de texto.")
+        st.success("Procesamiento completado.")  # Agregar mensaje de éxito
+        st.stop()  # Detener ejecución para evitar loops innecesarios
     else:
         st.error("Error al procesar el archivo. Intenta subirlo nuevamente.")
 
