@@ -1,15 +1,15 @@
 import streamlit as st
-import json
 import fitz  # PyMuPDF
 import tempfile
 import re
 
 st.title("Test de Función Hepática")
 
-# Función para extraer texto del PDF
+# Función para extraer preguntas del PDF y estructurarlas
+def extraer_preguntas(pdf_path):
     doc = fitz.open(pdf_path)
     preguntas = []
-    patron_pregunta = re.compile(r"^\d+\..+")  # Detectar líneas que parecen preguntas (ej: "1. ¿Cuál es...?")
+    patron_pregunta = re.compile(r"^\d+\..+")  # Detecta líneas que parecen preguntas (ej: "1. ¿Cuál es...?")
 
     pregunta_actual = None
     opciones = []
@@ -26,7 +26,7 @@ st.title("Test de Función Hepática")
                 opciones.append(line)
 
     if pregunta_actual:
-        preguntas.append({"pregunta": pregunta_actual, "opciones": opciones})  # Última pregunta
+        preguntas.append({"pregunta": pregunta_actual, "opciones": opciones})  # Añadir última pregunta
 
     return preguntas
 
@@ -37,13 +37,13 @@ if uploaded_file is not None:
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
         temp_file.write(uploaded_file.read())
         temp_pdf_path = temp_file.name
-    
+
     st.success("Archivo subido con éxito. Procesando...")
     preguntas_extraidas = extraer_preguntas(temp_pdf_path)
-    
+
     if preguntas_extraidas:
         st.success("Procesamiento completado. Ahora puedes responder las preguntas.")
-        
+
         for q in preguntas_extraidas:
             respuesta = st.radio(q["pregunta"], q["opciones"])
             if st.button(f"Verificar {q['pregunta'][:10]}..."):
