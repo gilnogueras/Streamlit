@@ -13,20 +13,29 @@ def extraer_preguntas(pdf_path):
 
     pregunta_actual = None
     opciones = []
+    respuesta_correcta = None
 
     for page in doc:
+        highlights = []
+        for annot in page.annots():
+            if annot.type[0] == 8:  # Tipo 8 = Resaltado
+                highlights.append(annot.info["content"])  # Extraer texto resaltado
+
         for line in page.get_text("text").split("\n"):
             line = line.strip()
             if patron_pregunta.match(line):  # Si la línea parece una pregunta
                 if pregunta_actual:
-                    preguntas.append({"pregunta": pregunta_actual, "opciones": opciones})
+                    preguntas.append({"pregunta": pregunta_actual, "opciones": opciones, "respuesta_correcta": respuesta_correcta})
                 pregunta_actual = line
                 opciones = []
+                respuesta_correcta = None
             elif line.startswith(("A)", "B)", "C)", "D)")):  # Si es una opción de respuesta
                 opciones.append(line)
+                if any(line in h for h in highlights):  # Si la opción está resaltada
+                    respuesta_correcta = line
 
     if pregunta_actual:
-        preguntas.append({"pregunta": pregunta_actual, "opciones": opciones})  # Añadir última pregunta
+        preguntas.append({"pregunta": pregunta_actual, "opciones": opciones, "respuesta_correcta": respuesta_correcta})  # Añadir última pregunta
 
     return preguntas
 
@@ -48,7 +57,7 @@ if uploaded_file is not None:
             with st.expander(q["pregunta"]):
                 respuesta = st.radio("Selecciona una respuesta:", q["opciones"], key=f"radio_{i}")
                 if st.button("Verificar", key=f"btn_{i}"):
-                    if "respuesta_correcta" in q:
+                    if q["respuesta_correcta"]:
                         if respuesta == q["respuesta_correcta"]:
                             st.success("¡Correcto!")
                         else:
