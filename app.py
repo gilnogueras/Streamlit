@@ -14,14 +14,17 @@ def extraer_preguntas(pdf_path):
     pregunta_actual = None
     opciones = []
     respuesta_correcta = None
+    resaltados_detectados = []
 
     for page in doc:
         highlights = []
         for annot in page.annots():
             if annot.type[0] == 8:  # Tipo 8 = Resaltado
                 rect = annot.rect  # Obtener la posición del resaltado
-                text_highlighted = page.get_text("text", clip=rect)  # Extraer texto resaltado
-                highlights.append(text_highlighted.strip())
+                text_highlighted = page.get_text("text", clip=rect).strip()  # Extraer texto resaltado
+                if text_highlighted:
+                    highlights.append(text_highlighted)
+                    resaltados_detectados.append(text_highlighted)  # Guardar para depuración
 
         for line in page.get_text("text").split("\n"):
             line = line.strip()
@@ -33,13 +36,14 @@ def extraer_preguntas(pdf_path):
                 respuesta_correcta = None
             elif line.startswith(("A)", "B)", "C)", "D)")):  # Si es una opción de respuesta
                 opciones.append(line)
-                if line in highlights:  # Si la opción está en los resaltados
-                    respuesta_correcta = line
+                for h in highlights:
+                    if h in line:
+                        respuesta_correcta = line
 
     if pregunta_actual:
         preguntas.append({"pregunta": pregunta_actual, "opciones": opciones, "respuesta_correcta": respuesta_correcta})  # Añadir última pregunta
 
-    return preguntas
+    return preguntas, resaltados_detectados
 
 # Subir archivo PDF
 uploaded_file = st.file_uploader("Sube un archivo PDF con preguntas de test", type=["pdf"])
@@ -50,7 +54,11 @@ if uploaded_file is not None:
         temp_pdf_path = temp_file.name
 
     st.success("Archivo subido con éxito. Procesando...")
-    preguntas_extraidas = extraer_preguntas(temp_pdf_path)
+    preguntas_extraidas, resaltados_detectados = extraer_preguntas(temp_pdf_path)
+
+    # Mostrar resaltados detectados para depuración
+    st.write("Resaltados detectados en el PDF:")
+    st.write(resaltados_detectados)
 
     if preguntas_extraidas:
         st.success("Procesamiento completado. Ahora puedes responder las preguntas.")
