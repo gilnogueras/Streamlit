@@ -54,3 +54,8 @@ def mostrar_pregunta(pregunta, opciones, respuesta_correcta):
 
 for q in questions_data:
     mostrar_pregunta(q["pregunta"], q["opciones"], q["respuesta_correcta"])
+
+st.success("Archivo subido con éxito. Procesando...")
+preguntas_extraidas = extraer_preguntas(temp_pdf_path)
+st.write(f"Se han extraído {len(preguntas_extraidas)} líneas de texto.")
+
