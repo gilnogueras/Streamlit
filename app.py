@@ -48,6 +48,12 @@ if uploaded_file is not None:
             with st.expander(q["pregunta"]):
                 respuesta = st.radio("Selecciona una respuesta:", q["opciones"], key=f"radio_{i}")
                 if st.button("Verificar", key=f"btn_{i}"):
-                    st.write(f"Has seleccionado: {respuesta}")
+                    if "respuesta_correcta" in q:
+                        if respuesta == q["respuesta_correcta"]:
+                            st.success("¡Correcto!")
+                        else:
+                            st.error(f"Incorrecto. La respuesta correcta es: {q['respuesta_correcta']}")
+                    else:
+                        st.warning("No se encontró la respuesta correcta en los datos extraídos.")
     else:
         st.error("No se pudieron extraer preguntas del archivo.")
