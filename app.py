@@ -1,33 +1,17 @@
 import streamlit as st
+import json
 import fitz  # PyMuPDF
 import tempfile
-import re
 
 st.title("Test de Función Hepática")
 
-# Función para extraer preguntas del PDF y estructurarlas
+# Función para extraer texto del PDF
 def extraer_preguntas(pdf_path):
     doc = fitz.open(pdf_path)
     preguntas = []
-    patron_pregunta = re.compile(r"^\d+\..+")  # Detecta líneas que parecen preguntas (ej: "1. ¿Cuál es...?")
-
-    pregunta_actual = None
-    opciones = []
-
     for page in doc:
-        for line in page.get_text("text").split("\n"):
-            line = line.strip()
-            if patron_pregunta.match(line):  # Si la línea parece una pregunta
-                if pregunta_actual:
-                    preguntas.append({"pregunta": pregunta_actual, "opciones": opciones})
-                pregunta_actual = line
-                opciones = []
-            elif line.startswith(("A)", "B)", "C)", "D)")):  # Si es una opción de respuesta
-                opciones.append(line)
-
-    if pregunta_actual:
-        preguntas.append({"pregunta": pregunta_actual, "opciones": opciones})  # Añadir última pregunta
-
+        text = page.get_text("text")
+        preguntas.extend(text.split("\n"))  # Dividir por líneas
     return preguntas
 
 # Subir archivo PDF
@@ -37,19 +21,12 @@ if uploaded_file is not None:
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
         temp_file.write(uploaded_file.read())
         temp_pdf_path = temp_file.name
-
+    
     st.success("Archivo subido con éxito. Procesando...")
     preguntas_extraidas = extraer_preguntas(temp_pdf_path)
-
-    if preguntas_extraidas:
-        st.success("Procesamiento completado. Ahora puedes responder las preguntas.")
-
-        for q in preguntas_extraidas:
-            respuesta = st.radio(q["pregunta"], q["opciones"])
-            if st.button(f"Verificar {q['pregunta'][:10]}..."):
-                st.write(f"Has seleccionado: {respuesta}")
-    else:
-        st.error("No se pudieron extraer preguntas del archivo.")
+    st.write("Preguntas extraídas:")
+    for p in preguntas_extraidas[:10]:  # Mostrar solo algunas preguntas
+        st.write(p)
 
 # Preguntas de ejemplo (esto se reemplazará con las extraídas del PDF)
 questions_data = [
@@ -69,7 +46,7 @@ score = 0
 
 def mostrar_pregunta(pregunta, opciones, respuesta_correcta):
     respuesta = st.radio(pregunta, opciones)
-    if st.button(f"Verificar {pregunta[:10]}..."):
+    if st.button("Verificar"):
         if respuesta == respuesta_correcta:
             st.success("¡Correcto!")
         else:
