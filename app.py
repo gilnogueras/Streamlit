@@ -42,15 +42,15 @@ questions_data = [
     }
 ]
 
-score = 0
-
 def mostrar_pregunta(pregunta, opciones, respuesta_correcta, index):
     respuesta = st.radio(pregunta, opciones, key=f"radio_{index}")
-    if st.button("Verificar", key=f"btn_{index}"):
+    verificar = st.button("Verificar", key=f"btn_{index}")
+    if verificar:
         if respuesta == respuesta_correcta:
             st.success("¡Correcto!")
         else:
             st.error(f"Incorrecto. La respuesta correcta es: {respuesta_correcta}")
 
 for i, q in enumerate(questions_data):
-    mostrar_pregunta(q["pregunta"], q["opciones"], q["respuesta_correcta"], i)
+    with st.expander(q["pregunta"]):  # Agrupar cada pregunta en un expander
+        mostrar_pregunta(q["pregunta"], q["opciones"], q["respuesta_correcta"], i)
