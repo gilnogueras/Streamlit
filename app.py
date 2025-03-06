@@ -2,52 +2,58 @@ import streamlit as st
 import fitz  # PyMuPDF
 import tempfile
 import re
+import cv2
+import numpy as np
+from pdf2image import convert_from_path
+import pytesseract
 
 st.title("Test de Función Hepática")
 
-# Función para extraer preguntas del PDF y estructurarlas
-def extraer_preguntas(pdf_path):
-    doc = fitz.open(pdf_path)
-    preguntas = []
-    patron_pregunta = re.compile(r"^\d+\..+")  # Detecta líneas que parecen preguntas (ej: "1. ¿Cuál es...?")
+# Función para extraer texto de imágenes con OCR
+def extraer_texto_resaltado(img):
+    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+    lower_yellow = np.array([20, 100, 100])
+    upper_yellow = np.array([30, 255, 255])
+    mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
+    result = cv2.bitwise_and(img, img, mask=mask)
+    gray = cv2.cvtColor(result, cv2.COLOR_RGB2GRAY)
+    text = pytesseract.image_to_string(gray, config='--psm 6')
+    return text.strip()
 
+# Función para extraer preguntas y respuestas del PDF con OCR
+def extraer_preguntas(pdf_path):
+    images = convert_from_path(pdf_path)
+    preguntas = []
+    patron_pregunta = re.compile(r"^\d+\..+")
+    
     pregunta_actual = None
     opciones = []
     respuesta_correcta = None
-    resaltados_detectados = []
-
-    for page in doc:
-        highlights = []
-        for annot in page.annots():
-            if annot.type[0] == 8:  # Tipo 8 = Resaltado
-                color = annot.colors.get("stroke") or annot.colors.get("fill")
-                st.write(f"Color detectado: {color}")  # Mostrar colores detectados para depuración
-                if color and (color[0] > 0.8 and color[1] > 0.8 and color[2] < 0.3):  # Amarillo
-                    rect = annot.rect  # Obtener la posición del resaltado
-                    text_highlighted = page.get_text("text", clip=rect).strip()  # Extraer texto resaltado
-                    st.write(f"Texto resaltado detectado: {text_highlighted}")  # Depuración
-                    if text_highlighted:
-                        highlights.append(text_highlighted.lower().strip())  # Normalizar texto resaltado
-                        resaltados_detectados.append(text_highlighted)  # Guardar para depuración
-
-        for line in page.get_text("text").split("\n"):
+    respuestas_resaltadas = []
+    
+    for img in images:
+        img_cv = np.array(img)
+        texto_resaltado = extraer_texto_resaltado(img_cv)
+        respuestas_resaltadas.extend(texto_resaltado.split("\n"))
+        
+        text = pytesseract.image_to_string(img_cv, config='--psm 6')
+        for line in text.split("\n"):
             line = line.strip()
-            if patron_pregunta.match(line):  # Si la línea parece una pregunta
+            if patron_pregunta.match(line):
                 if pregunta_actual:
                     preguntas.append({"pregunta": pregunta_actual, "opciones": opciones, "respuesta_correcta": respuesta_correcta})
                 pregunta_actual = line
                 opciones = []
                 respuesta_correcta = None
-            elif line.startswith(("A)", "B)", "C)", "D)")):  # Si es una opción de respuesta
+            elif line.startswith(("A)", "B)", "C)", "D)")):
                 opciones.append(line)
-                for h in highlights:
-                    if h in line.lower().strip():  # Comparar sin mayúsculas ni espacios extra
-                        respuesta_correcta = line
-
+                if any(line in res for res in respuestas_resaltadas):
+                    respuesta_correcta = line
+    
     if pregunta_actual:
-        preguntas.append({"pregunta": pregunta_actual, "opciones": opciones, "respuesta_correcta": respuesta_correcta})  # Añadir última pregunta
-
-    return preguntas, resaltados_detectados
+        preguntas.append({"pregunta": pregunta_actual, "opciones": opciones, "respuesta_correcta": respuesta_correcta})
+    
+    return preguntas, respuestas_resaltadas
 
 # Subir archivo PDF
 uploaded_file = st.file_uploader("Sube un archivo PDF con preguntas de test", type=["pdf"])
@@ -58,11 +64,11 @@ if uploaded_file is not None:
         temp_pdf_path = temp_file.name
 
     st.success("Archivo subido con éxito. Procesando...")
-    preguntas_extraidas, resaltados_detectados = extraer_preguntas(temp_pdf_path)
+    preguntas_extraidas, respuestas_resaltadas = extraer_preguntas(temp_pdf_path)
 
-    # Mostrar resaltados detectados para depuración
-    st.write("Resaltados detectados en el PDF:")
-    st.write(resaltados_detectados)
+    # Mostrar respuestas resaltadas detectadas para depuración
+    st.write("Respuestas resaltadas detectadas en el PDF:")
+    st.write(respuestas_resaltadas)
 
     if preguntas_extraidas:
         st.success("Procesamiento completado. Ahora puedes responder las preguntas.")
