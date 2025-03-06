@@ -21,11 +21,13 @@ def extraer_preguntas(pdf_path):
         for annot in page.annots():
             if annot.type[0] == 8:  # Tipo 8 = Resaltado
                 color = annot.colors.get("stroke") or annot.colors.get("fill")
-                if color and (color[0] > 0.8 and color[1] > 0.8 and color[2] < 0.2):  # Amarillo
+                st.write(f"Color detectado: {color}")  # Mostrar colores detectados para depuración
+                if color and (color[0] > 0.8 and color[1] > 0.8 and color[2] < 0.3):  # Amarillo
                     rect = annot.rect  # Obtener la posición del resaltado
                     text_highlighted = page.get_text("text", clip=rect).strip()  # Extraer texto resaltado
+                    st.write(f"Texto resaltado detectado: {text_highlighted}")  # Depuración
                     if text_highlighted:
-                        highlights.append(text_highlighted)
+                        highlights.append(text_highlighted.lower().strip())  # Normalizar texto resaltado
                         resaltados_detectados.append(text_highlighted)  # Guardar para depuración
 
         for line in page.get_text("text").split("\n"):
@@ -39,7 +41,7 @@ def extraer_preguntas(pdf_path):
             elif line.startswith(("A)", "B)", "C)", "D)")):  # Si es una opción de respuesta
                 opciones.append(line)
                 for h in highlights:
-                    if h in line:
+                    if h in line.lower().strip():  # Comparar sin mayúsculas ni espacios extra
                         respuesta_correcta = line
 
     if pregunta_actual:
