@@ -1,2 +1,6 @@
+opencv-python-headless
+pdf2image
+pytesseract
+numpy
 streamlit
 pymupdf
