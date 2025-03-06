@@ -16,6 +16,10 @@ def extraer_texto_resaltado(img):
     upper_yellow = np.array([30, 255, 255])
     mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
     result = cv2.bitwise_and(img, img, mask=mask)
+    
+    # Reducir tamaño de imagen para mejorar velocidad
+    result = cv2.resize(result, (0, 0), fx=0.5, fy=0.5)
+    
     gray = cv2.cvtColor(result, cv2.COLOR_RGB2GRAY)
     text = pytesseract.image_to_string(gray, config='--psm 6')
     return text.strip()
